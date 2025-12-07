@@ -2,9 +2,7 @@ package com.example;
 
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.util.Arrays;
@@ -41,53 +39,80 @@ public class Main {
         }
 
 
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
-            System.out.println("Connection: " + connection);
-            try {
 
-
-                Statement statement = connection.createStatement();
-                String init = Paths.get("src/main/resources/init.sql").toString();
-                BufferedReader br = new BufferedReader(new FileReader(init));
-
-                System.out.println("Preparing statements form file!");
-                StringBuilder query = new StringBuilder();
-                String line;
-                System.out.println("File found at :" + init);
-                while ((line = br.readLine()) != null){
-
-                    if(line.trim().startsWith("--")){
-                        continue;
-                    }
-                    if(line.trim().startsWith("USE")){
-                        int space = line.indexOf(' ');
-                        String newLine = line.replace(";", "");
-                        jdbcUrl = jdbcUrl.concat( "/" + newLine.substring(space +1));
-                    }
-                    query.append(line).append(" ");
-
-                    if (line.endsWith(";")){
-                        statement.execute(query.toString().trim());
-                        query = new StringBuilder();
-                    }
-
-                }
-
-                System.out.println("Database created and data filled from file!");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
         //Todo: Starting point for your code
-
+        dbInitilization();
         logInPromt();
 
 
 
         System.out.println("Database connection established");
+    }
+
+    private void dbInitilization() {
+        try (Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+            PreparedStatement checkforDb = con.prepareStatement("show databases");
+            ResultSet rs = checkforDb.executeQuery();
+            boolean hasTestDb = false;
+            boolean hasAccountTable = false;
+            boolean hasMoonMissionTable = false;
+            while (rs.next()) {
+                if(rs.getString("Database").matches("testdb")) {
+                    hasTestDb = true;
+                    jdbcUrl = jdbcUrl.concat("/testdb");
+                }
+            }
+            if (hasTestDb) {
+                PreparedStatement checkforTables;
+                checkforTables = con.prepareStatement("show tables from testdb");
+                ResultSet rs2 = checkforTables.executeQuery();
+                while (rs2.next()) {
+                    if(rs2.getString(1).equals("account")) hasAccountTable = true;
+                    if(rs2.getString(1).equals("moon_mission")) hasMoonMissionTable = true;
+                }
+            }
+            if (hasAccountTable && hasMoonMissionTable) {
+                return;
+            } else inputAccountAndMissionsfromfile(con);
+
+        }catch(SQLException e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void inputAccountAndMissionsfromfile(Connection con) {
+        try {
+
+            Statement statement = con.createStatement();
+            String init = Paths.get("src/main/resources/init.sql").toString();
+            BufferedReader br = new BufferedReader(new FileReader(init));
+
+            StringBuilder query = new StringBuilder();
+            String line;
+            System.out.println("File found at :" + init);
+            while ((line = br.readLine()) != null) {
+
+                if (line.trim().startsWith("--")) {
+                    continue;
+                }
+                if (line.trim().startsWith("USE")) {
+                    int space = line.indexOf(' ');
+                    String newLine = line.replace(";", "");
+                    jdbcUrl = jdbcUrl.concat("/" + newLine.substring(space + 1));
+                }
+                query.append(line).append(" ");
+
+                if (line.endsWith(";")) {
+                    statement.execute(query.toString().trim());
+                    query = new StringBuilder();
+                }
+
+            }
+
+            System.out.println("Database created and data filled from file!");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void logInPromt() {
@@ -102,9 +127,8 @@ public class Main {
                 String nameRes = "";
                 String passwordRes = "";
 
-                String getUser = "Select name, password from account where name = ?";
                 PreparedStatement loginStmnt;
-                loginStmnt = conn.prepareStatement(getUser);
+                loginStmnt = conn.prepareStatement("Select name, password from account where name = ?");
                 loginStmnt.setString(1, userName);
 
 
@@ -191,16 +215,10 @@ public class Main {
 
     private void getMoonMissionId() {
         try(Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
-        String stringId = IO.readln("Input mission_ID:").trim();
-        Integer missionId = null;
-        if(stringId.matches("\\d+")){
-            missionId = Integer.parseInt(stringId);
-        }else{
-            System.out.println("Input mission id as number!");
-            getMoonMission();
-        }
+        String missionId = IO.readln("Input mission_ID:").trim();
+        //TODO input validation
         PreparedStatement getMission = con.prepareStatement("SELECT * FROM moon_mission WHERE mission_id = ?");
-        getMission.setInt(1, missionId);
+        getMission.setString(1, missionId);
         ResultSet rs = getMission.executeQuery();
         ResultSetMetaData rsmd = rs.getMetaData();
             out.println("Mission details \n ---------------");
@@ -235,10 +253,10 @@ public class Main {
         try(Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
             String stringYear = IO.readln("Input mission year:").trim();
             Integer missionYear = null;
-            if (stringYear.matches("\\d+")) {
+            if (stringYear.matches("\\d{4}")) {
                 missionYear = Integer.parseInt(stringYear);
             } else {
-                System.out.println("Input mission id as number!");
+                System.out.println("Input mission year as YYYY");
                 getMoonMission();
             }
             PreparedStatement getMission = con.prepareStatement("select count(*) as missionCount, year(launch_date) as launchyear from moon_mission where year(launch_date) = ? group by launchyear;");
@@ -248,6 +266,12 @@ public class Main {
             while(rs.next()){
                 out.println("Missions count year " + missionYear + ": "+ rs.getInt("missionCount"));
             }
+            String again = IO.readln("\n 1 ) New year \n Anykey ) menu \n").trim();
+            if(again.equals("1")){
+                missionCountYear();
+            }else{
+                options();
+            }
 
         }catch(SQLException e){
             System.out.println("Error getting moon mission!" + e.getMessage());
@@ -255,9 +279,66 @@ public class Main {
     }
 
     private void updateAccount() {
+        Integer userId = null;
+        String stringId = IO.readln("User_id to update password: ").trim();
+        if(stringId.matches("\\d+")){
+            userId = Integer.parseInt(stringId);
+        }else{
+            System.out.println("Input user Id number.");
+            updateAccount();
+        }
+        try(Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+            String getUserId = "select user_id from account where user_id = ?";
+            PreparedStatement userIdCheck = con.prepareStatement(getUserId);
+            userIdCheck.setInt(1, userId);
+
+            ResultSet getUserCheck = userIdCheck.executeQuery();
+            String newPassword = "";
+            while(getUserCheck.next()){
+                int responseId = getUserCheck.getInt("user_id");
+                if(responseId == userId){
+                    out.println("Set new password for user: " + userId);
+                    newPassword = IO.readln();
+
+                    PreparedStatement updatePass = con.prepareStatement("update account set password = ? where user_id = ?;");
+                    updatePass.setString(1, newPassword);
+                    updatePass.setInt(2, userId);
+
+                    updatePass.executeUpdate();
+                    out.println("Password updated!");
+                    options();
+                }
+            }
+            out.println("No user found.");
+            options();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void createAccount() {
+        try(Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+            String firstName = IO.readln("First name of account.");
+            String lastName = IO.readln("Last name of account.");
+            String ssn = IO.readln("SSN of account.");
+            String password = IO.readln("Password of account.");
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(firstName.substring(0,3));
+            sb.append(lastName.substring(0,3));
+            String name = sb.toString();
+            PreparedStatement createAccount = con.prepareStatement("insert into account (name, password, first_name, last_name, ssn) values (?,?,?,?,?)");
+            createAccount.setString(1, name);
+            createAccount.setString(2, password);
+            createAccount.setString(3, firstName);
+            createAccount.setString(4, lastName);
+            createAccount.setString(5, ssn);
+
+            createAccount.executeUpdate();
+            out.println("Account created!\n Username is: "+ name);
+        }catch(Exception e){
+
+        }
 
     }
 
