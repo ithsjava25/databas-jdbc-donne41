@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.util.Arrays;
+import java.util.Scanner;
 
 import static java.lang.System.*;
 
@@ -13,6 +14,7 @@ public class Main {
     String jdbcUrl;
     String dbUser;
     String dbPass;
+    Scanner sc;
 
 
     static void main(String[] args) {
@@ -39,27 +41,29 @@ public class Main {
         }
 
 
-
         //Todo: Starting point for your code
-        dbInitilization();
+        //dbInitilization();
         logInPromt();
+        //todo fixa testdb ansluting.
 
 
-
-        System.out.println("Database connection established");
+        //System.out.println("Database connection established");
     }
 
     private void dbInitilization() {
         try (Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+            if(con == null) {
+                databaseDisconnected();
+            }
             PreparedStatement checkforDb = con.prepareStatement("show databases");
             ResultSet rs = checkforDb.executeQuery();
             boolean hasTestDb = false;
             boolean hasAccountTable = false;
             boolean hasMoonMissionTable = false;
             while (rs.next()) {
-                if(rs.getString("Database").matches("testdb")) {
+                if (rs.getString("Database").matches("testdb")) {
                     hasTestDb = true;
-                    jdbcUrl = jdbcUrl.concat("/testdb");
+                    //jdbcUrl = jdbcUrl.concat("/testdb");
                 }
             }
             if (hasTestDb) {
@@ -67,22 +71,28 @@ public class Main {
                 checkforTables = con.prepareStatement("show tables from testdb");
                 ResultSet rs2 = checkforTables.executeQuery();
                 while (rs2.next()) {
-                    if(rs2.getString(1).equals("account")) hasAccountTable = true;
-                    if(rs2.getString(1).equals("moon_mission")) hasMoonMissionTable = true;
+                    if (rs2.getString(1).equals("account")) hasAccountTable = true;
+                    if (rs2.getString(1).equals("moon_mission")) hasMoonMissionTable = true;
                 }
             }
             if (hasAccountTable && hasMoonMissionTable) {
                 return;
-            } else inputAccountAndMissionsfromfile(con);
+            } else
+                return;
+            //inputAccountAndMissionsfromfile(con);
 
-        }catch(SQLException e){
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
+    private void databaseDisconnected() {
+        out.println("Database disconnected!");
+        System.exit(1);
+    }
+
     private void inputAccountAndMissionsfromfile(Connection con) {
         try {
-
             Statement statement = con.createStatement();
             String init = Paths.get("src/main/resources/init.sql").toString();
             BufferedReader br = new BufferedReader(new FileReader(init));
@@ -116,60 +126,57 @@ public class Main {
     }
 
     private void logInPromt() {
+        try (Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+            if(con == null) {
+                databaseDisconnected();
+            }
+            sc = new Scanner(System.in);
 
-        try (Connection conn = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
-            boolean login = false;
-            do {
-                //TODO Improve security, get all name from database, check if exists, then check password?
-                String userName = IO.readln("Username:").trim();
-                //consider using char[] for storing passwords.
-                String password = IO.readln("Password:").trim();
-                String nameRes = "";
-                String passwordRes = "";
+            //TODO Improve security, get all name from database, check if exists, then check password?
+            out.println("Inout username readline");
+            out.println("Username");
+            String userName = sc.nextLine();
+            //consider using char[] for storing passwords.
+            out.println("Password");
+            String password = sc.nextLine();
 
-                PreparedStatement loginStmnt;
-                loginStmnt = conn.prepareStatement("Select name, password from account where name = ?");
-                loginStmnt.setString(1, userName);
+            out.println("username set to: " + userName);
+            String nameRes = "";
+            String passwordRes = "";
+            if (userName.equals("0")) {
+                exit();
+            }
+            if(password.equals("0")) {
+                exit();
+            }
 
-
-                ResultSet userRes = loginStmnt.executeQuery();
-
-
-                while (userRes.next()) {
-                    nameRes = userRes.getString("name");
-                    passwordRes = userRes.getString("password");
-                }
-                if (nameRes != null && passwordRes.equals(password)) {
-                    System.out.println("Logged in successfully!");
-                    options();
-                } else {
-                    System.out.printf("""
-                            Invalid login!
-                            1 ) Try again.
-                            0 ) for exit.
-                            """);
-                }
-                String tryAgain = IO.readln().trim();
-                switch (tryAgain) {
-                    case "1" -> login = true;
-                    case "0" -> login = false;
-                    default -> {
-                        System.out.println("invalid selection, exiting.");
-                        return;
-                    }
-                }
-
-            }while(login);
+            PreparedStatement loginStmnt;
+            loginStmnt = con.prepareStatement("Select name, password from account where name = ?");
+            loginStmnt.setString(1, userName);
 
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            ResultSet userRes = loginStmnt.executeQuery();
+
+
+            while (userRes.next()) {
+                nameRes = userRes.getString("name");
+                passwordRes = userRes.getString("password");
+                out.println("Response name" + nameRes);
+                out.println("Response pass" + passwordRes);
+            }
+            if (nameRes != null && passwordRes.equals(password)) {
+                System.out.println("Logged in successfully!");
+                options();
+            } else {
+                throw new Exception("invalid");
+                 }
+            } catch(Exception e){
+                out.println("Invalid username or password!" + e.getMessage());
+            }
+
+
         }
-
-
-
-    }
-    private void options(){
+        private void options () {
             System.out.printf("""
                     1) List moon missions (prints spacecraft names from `moon_mission`).
                     2) Get a moon mission by mission_id (prints details for that mission).
@@ -179,7 +186,8 @@ public class Main {
                     6) Delete an account (prompts: user_id; prints confirmation).
                     0) Exit.
                     """);
-            String inputChoice = IO.readln().trim();
+            String inputChoice = sc.nextLine().trim();
+            out.println(inputChoice);
             switch (inputChoice) {
                 case "1" -> getMoonMission();
                 case "2" -> getMoonMissionId();
@@ -194,240 +202,259 @@ public class Main {
                 }
             }
 
-    }
-
-    private void getMoonMission() {
-        try(Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)){
-            PreparedStatement getMission = con.prepareStatement("SELECT spacecraft FROM moon_mission");
-            ResultSet rs = getMission.executeQuery();
-            System.out.println("Spacecraft names: ");
-            while (rs.next()) {
-                System.out.println(rs.getString("spacecraft"));
-            }
-            IO.readln();
-            options();
-
-        }catch(SQLException e){
-            System.out.println("Error getting moon mission!" + e.getMessage());
         }
 
-    }
-
-    private void getMoonMissionId() {
-        try(Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
-        String missionId = IO.readln("Input mission_ID:").trim();
-        //TODO input validation
-        PreparedStatement getMission = con.prepareStatement("SELECT * FROM moon_mission WHERE mission_id = ?");
-        getMission.setString(1, missionId);
-        ResultSet rs = getMission.executeQuery();
-        ResultSetMetaData rsmd = rs.getMetaData();
-            out.println("Mission details \n ---------------");
-        while (rs.next()) {
-            out.print(rsmd.getColumnName(1) + ": ");
-            out.println(rs.getString("mission_id"));
-            out.print(rsmd.getColumnName(2) + ": ");
-            out.println(rs.getString("spacecraft"));
-            out.print(rsmd.getColumnName(3) + ": ");
-            out.println(rs.getString("launch_date"));
-            out.print(rsmd.getColumnName(4) + ": ");
-            out.println(rs.getString("carrier_rocket"));
-            out.print(rsmd.getColumnName(5) + ": ");
-            out.println(rs.getString("operator"));
-            out.print(rsmd.getColumnName(6) + ": ");
-            out.println(rs.getString("mission_type"));
-            out.print(rsmd.getColumnName(7) + ": ");
-            out.println(rs.getString("outcome"));
-        }
-        String again = IO.readln("\n 1 ) New mission \n Anykey ) menu \n").trim();
-        if(again.equals("1")){
-            getMoonMissionId();
-        }else{
-            options();
-        }
-        }catch(Exception e){
-            System.out.println("something went wrong!" + e.getMessage());
-        }
-    }
-
-    private void missionCountYear() {
-        try(Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
-            String stringYear = IO.readln("Input mission year:").trim();
-            Integer missionYear = null;
-            if (stringYear.matches("\\d{4}")) {
-                missionYear = Integer.parseInt(stringYear);
-            } else {
-                System.out.println("Input mission year as YYYY");
-                getMoonMission();
-            }
-            PreparedStatement getMission = con.prepareStatement("select count(*) as missionCount, year(launch_date) as launchyear from moon_mission where year(launch_date) = ? group by launchyear;");
-            getMission.setInt(1, missionYear);
-            ResultSet rs = getMission.executeQuery();
-
-            while(rs.next()){
-                out.println("Missions count year " + missionYear + ": "+ rs.getInt("missionCount"));
-            }
-            String again = IO.readln("\n 1 ) New year \n Anykey ) menu \n").trim();
-            if(again.equals("1")){
-                missionCountYear();
-            }else{
+        private void getMoonMission () {
+            try (Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+                if(con == null) {
+                    databaseDisconnected();
+                }
+                PreparedStatement getMission = con.prepareStatement("SELECT spacecraft FROM moon_mission");
+                ResultSet rs = getMission.executeQuery();
+                System.out.println("Spacecraft names: ");
+                while (rs.next()) {
+                    System.out.println(rs.getString("spacecraft"));
+                }
+                out.println("-------------");
                 options();
+
+            } catch (Exception e) {
+                System.out.println("Error getting moon mission!" + e.getMessage());
             }
 
-        }catch(SQLException e){
-            System.out.println("Error getting moon mission!" + e.getMessage());
         }
-    }
 
-    private void updateAccount() {
-        Integer userId = null;
-        String stringId = IO.readln("User_id to update password: ").trim();
-        if(stringId.matches("\\d+")){
-            userId = Integer.parseInt(stringId);
-        }else{
-            System.out.println("Input user Id number.");
-            updateAccount();
-        }
-        try(Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
-            String getUserId = "select user_id from account where user_id = ?";
-            PreparedStatement userIdCheck = con.prepareStatement(getUserId);
-            userIdCheck.setInt(1, userId);
-
-            ResultSet getUserCheck = userIdCheck.executeQuery();
-            String newPassword = "";
-            while(getUserCheck.next()){
-                int responseId = getUserCheck.getInt("user_id");
-                if(responseId == userId){
-                    out.println("Set new password for user: " + userId);
-                    newPassword = IO.readln();
-
-                    PreparedStatement updatePass = con.prepareStatement("update account set password = ? where user_id = ?;");
-                    updatePass.setString(1, newPassword);
-                    updatePass.setInt(2, userId);
-
-                    updatePass.executeUpdate();
-                    out.println("Password updated!");
-                    options();
+        private void getMoonMissionId () {
+            try (Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+                if(con == null) {
+                    databaseDisconnected();
                 }
-            }
-            out.println("No user found.");
-            options();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void createAccount() {
-        try(Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
-            String firstName = IO.readln("First name of account.");
-            String lastName = IO.readln("Last name of account.");
-            String ssn = IO.readln("SSN of account.");
-            String password = IO.readln("Password of account.");
-
-            StringBuilder sb = new StringBuilder();
-            sb.append(firstName.substring(0,3));
-            sb.append(lastName.substring(0,3));
-            String name = sb.toString();
-            PreparedStatement createAccount = con.prepareStatement("insert into account (name, password, first_name, last_name, ssn) values (?,?,?,?,?)");
-            createAccount.setString(1, name);
-            createAccount.setString(2, password);
-            createAccount.setString(3, firstName);
-            createAccount.setString(4, lastName);
-            createAccount.setString(5, ssn);
-
-            createAccount.executeUpdate();
-            out.println("Account created!\n Username is: "+ name);
-        }catch(Exception e){
-
-        }
-
-    }
-
-    private void exit() {
-        System.out.println("Exiting...");
-        System.exit(0);
-    }
-    private void deleteAccount() {
-        Integer userId = null;
-        String stringId = IO.readln("User_id to delete: ").trim();
-        if(stringId.matches("\\d+")){
-            userId = Integer.parseInt(stringId);
-        }else{
-            System.out.println("Input user Id number.");
-            deleteAccount();
-        }
-        try(Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)){
-            String getUserId = "select user_id, name from account where user_id = ?";
-            PreparedStatement userIdCheck = con.prepareStatement(getUserId);
-            userIdCheck.setInt(1, userId);
-
-            ResultSet getUserCheck = userIdCheck.executeQuery();
-            String userName = "";
-            int id = 0;
-
-            while(getUserCheck.next()){
-                userName = getUserCheck.getString("name");
-                id =  Integer.parseInt(getUserCheck.getString("user_id"));
-            }
-            if(id == userId){
-                String response = IO.readln("Delete user: "+ userName + " " + id + "? \n 1 ) yes. \n 0 ) no. \n Anykey ) exit.");
-                switch (response) {
-                    case "1" -> {
-                        PreparedStatement deleteUser = con.prepareStatement("delete from account where user_id = ?");
-                        deleteUser.setInt(1, userId);
-                        deleteUser.executeUpdate();
-                        System.out.println("User deleted!");
-
-                    }
-                    case "0" -> {
-                        deleteAccount();
-                    }
-                    default -> options();
+                out.println("Input mission_ID:");
+                String missionId = sc.nextLine().trim();
+                //TODO input validation
+                PreparedStatement getMission = con.prepareStatement("SELECT * FROM moon_mission WHERE mission_id = ?");
+                getMission.setString(1, missionId);
+                ResultSet rs = getMission.executeQuery();
+                ResultSetMetaData rsmd = rs.getMetaData();
+                out.println("Mission details \n ---------------");
+                while (rs.next()) {
+                    out.print(rsmd.getColumnName(1) + ": ");
+                    out.println(rs.getString("mission_id"));
+                    out.print(rsmd.getColumnName(2) + ": ");
+                    out.println(rs.getString("spacecraft"));
+                    out.print(rsmd.getColumnName(3) + ": ");
+                    out.println(rs.getString("launch_date"));
+                    out.print(rsmd.getColumnName(4) + ": ");
+                    out.println(rs.getString("carrier_rocket"));
+                    out.print(rsmd.getColumnName(5) + ": ");
+                    out.println(rs.getString("operator"));
+                    out.print(rsmd.getColumnName(6) + ": ");
+                    out.println(rs.getString("mission_type"));
+                    out.print(rsmd.getColumnName(7) + ": ");
+                    out.println(rs.getString("outcome"));
                 }
-            }else {
-                System.out.println("User_id: " + userId + " not found");
-                String tryAgain = IO.readln("1 ) try again. \n Anykey ) exit.").trim();
-                if (tryAgain.equals("1")) {
-                    deleteAccount();
+                options();
+            } catch (Exception e) {
+                System.out.println("something went wrong!" + e.getMessage());
+            }
+        }
+
+        private void missionCountYear () {
+            try (Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+                if(con == null) {
+                    databaseDisconnected();
+                }
+                out.println("Input mission year:");
+                String stringYear = sc.nextLine();
+                Integer missionYear = null;
+                if (stringYear.matches("\\d{4}")) {
+                    missionYear = Integer.parseInt(stringYear);
                 } else {
-                    options();
+                    System.out.println("Input mission year as YYYY");
+                    getMoonMission();
                 }
+                PreparedStatement getMission = con.prepareStatement("select count(*) as missionCount, year(launch_date) as launchyear from moon_mission where year(launch_date) = ? group by launchyear;");
+                getMission.setInt(1, missionYear);
+                ResultSet rs = getMission.executeQuery();
+
+                while (rs.next()) {
+                    out.println("Missions count year " + missionYear + ": " + rs.getInt("missionCount"));
+                }
+                options();
+
+            } catch (SQLException e) {
+                System.out.println("Error getting moon mission!" + e.getMessage());
+            }
+        }
+
+        private void updateAccount () {
+            Integer userId = null;
+            out.println("User_id to update password: ");
+            String stringId = sc.nextLine();
+            if (stringId.matches("\\d+")) {
+                userId = Integer.parseInt(stringId);
+            } else {
+                System.out.println("Input user Id number.");
+                updateAccount();
+            }
+            try (Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+                if(con == null) {
+                    databaseDisconnected();
+                }
+                String getUserId = "select user_id from account where user_id = ?";
+                PreparedStatement userIdCheck = con.prepareStatement(getUserId);
+                userIdCheck.setInt(1, userId);
+
+                ResultSet getUserCheck = userIdCheck.executeQuery();
+                String newPassword = "";
+                while (getUserCheck.next()) {
+                    int responseId = getUserCheck.getInt("user_id");
+                    if (responseId == userId) {
+                        out.println("Set new password for user: " + userId);
+                        newPassword = sc.nextLine();
+
+                        PreparedStatement updatePass = con.prepareStatement("update account set password = ? where user_id = ?;");
+                        updatePass.setString(1, newPassword);
+                        updatePass.setInt(2, userId);
+
+                        updatePass.executeUpdate();
+                        out.println("Password updated!");
+                        options();
+                    }
+                }
+                out.println("No user found.");
+                options();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private void createAccount () {
+            try (Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+                if(con == null) {
+                    databaseDisconnected();
+                }
+                //TODO Flytta alla input utanför try, så det är färdigt när con ska starta.
+                out.println("First name of account.");
+                String firstName = sc.nextLine();
+                out.println("Last name of account.");
+                String lastName = sc.nextLine();
+                out.println("SSN of account.");
+                String ssn = sc.nextLine();
+                out.println("Password of account.");
+                String password = sc.nextLine();
+
+                StringBuilder sb = new StringBuilder();
+                sb.append(firstName.substring(0, 3));
+                sb.append(lastName.substring(0, 3));
+                String name = sb.toString();
+                PreparedStatement createAccount = con.prepareStatement("insert into account (name, password, first_name, last_name, ssn) values (?,?,?,?,?)");
+                createAccount.setString(1, name);
+                createAccount.setString(2, password);
+                createAccount.setString(3, firstName);
+                createAccount.setString(4, lastName);
+                createAccount.setString(5, ssn);
+
+                createAccount.executeUpdate();
+                out.println("Account created!\n Username is: " + name);
+            } catch (Exception e) {
+                throw new  RuntimeException(e);
             }
 
+        }
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        private void exit () {
+            System.out.println("Exiting...");
+            logInPromt();
+        }
+        private void deleteAccount () {
+            Integer userId = null;
+            out.println("User_id to delete:");
+            String stringId = sc.nextLine();
+            out.println("StringID: " + stringId);
+            if (stringId.matches("\\d+")) {
+                userId = Integer.parseInt(stringId);
+            } else {
+                System.out.println("Input user Id number.");
+                deleteAccount();
+            }
+            try (Connection con = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+                if(con == null) {
+                    databaseDisconnected();
+                }
+                String getUserId = "select user_id, name from account where user_id = ?";
+                PreparedStatement userIdCheck = con.prepareStatement(getUserId);
+                userIdCheck.setInt(1, userId);
+
+                ResultSet getUserCheck = userIdCheck.executeQuery();
+                String userName = "";
+                int id = 0;
+
+                while (getUserCheck.next()) {
+                    userName = getUserCheck.getString("name");
+                    id = Integer.parseInt(getUserCheck.getString("user_id"));
+                }
+                if (id == userId) {
+                    //String response = IO.readln("Delete user: " + userName + " " + id + "? \n 1 ) yes. \n 0 ) no. \n Anykey ) exit.");
+                    String response = "1";
+                    switch (response) {
+                        case "1" -> {
+                            PreparedStatement deleteUser = con.prepareStatement("delete from account where user_id = ?");
+                            deleteUser.setInt(1, userId);
+                            deleteUser.executeUpdate();
+                            System.out.println("User deleted!");
+
+                        }
+                        case "0" -> {
+                            deleteAccount();
+                        }
+                        default -> options();
+                    }
+                } else {
+                    System.out.println("User_id: " + userId + " not found");
+                    String tryAgain = IO.readln("1 ) try again. \n Anykey ) exit.").trim();
+                    if (tryAgain.equals("1")) {
+                        deleteAccount();
+                    } else {
+                        options();
+                    }
+                }
+
+
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        /**
+         * Determines if the application is running in development mode based on system properties,
+         * environment variables, or command-line arguments.
+         *
+         * @param args an array of command-line arguments
+         * @return {@code true} if the application is in development mode; {@code false} otherwise
+         */
+        private static boolean isDevMode (String[]args){
+            if (Boolean.getBoolean("devMode"))  //Add VM option -DdevMode=true
+                return true;
+            if ("true".equalsIgnoreCase(System.getenv("DEV_MODE")))  //Environment variable DEV_MODE=true
+                return true;
+            for (String arg : args) {
+                System.out.println(arg);
+            }
+            return Arrays.asList(args).contains("--dev"); //Argument --dev
+        }
+
+        /**
+         * Reads configuration with precedence: Java system property first, then environment variable.
+         * Returns trimmed value or null if neither source provides a non-empty value.
+         */
+        private static String resolveConfig (String propertyKey, String envKey){
+            String v = System.getProperty(propertyKey);
+            System.out.println("V get property: " + v);
+            if (v == null || v.trim().isEmpty()) {
+                v = System.getenv(envKey);
+                System.out.println("v after == null: " + v);
+            }
+            return (v == null || v.trim().isEmpty()) ? null : v.trim();
         }
     }
-
-    /**
-     * Determines if the application is running in development mode based on system properties,
-     * environment variables, or command-line arguments.
-     *
-     * @param args an array of command-line arguments
-     * @return {@code true} if the application is in development mode; {@code false} otherwise
-     */
-    private static boolean isDevMode(String[] args) {
-        if (Boolean.getBoolean("devMode"))  //Add VM option -DdevMode=true
-            return true;
-        if ("true".equalsIgnoreCase(System.getenv("DEV_MODE")))  //Environment variable DEV_MODE=true
-            return true;
-        for (String arg : args) {
-            System.out.println(arg);
-        }
-        return Arrays.asList(args).contains("--dev"); //Argument --dev
-    }
-
-    /**
-     * Reads configuration with precedence: Java system property first, then environment variable.
-     * Returns trimmed value or null if neither source provides a non-empty value.
-     */
-    private static String resolveConfig(String propertyKey, String envKey) {
-        String v = System.getProperty(propertyKey);
-        System.out.println("V get property: " + v);
-        if (v == null || v.trim().isEmpty()) {
-            v = System.getenv(envKey);
-            System.out.println("v after == null: " + v);
-        }
-        return (v == null || v.trim().isEmpty()) ? null : v.trim();
-    }
-}
