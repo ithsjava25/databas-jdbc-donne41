@@ -17,9 +17,8 @@ public class MoonMission {
         String sql = "select spacecraft from moon_mission";
         List<String> spaceCrafts = new ArrayList<>();
         try (Connection con = dataSource.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ResultSet rs = ps.executeQuery();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 spaceCrafts.add(rs.getString("spacecraft"));
@@ -28,7 +27,7 @@ public class MoonMission {
         return spaceCrafts;
     }
 
-    public List<String> getMission(int id) throws SQLException{
+    public List<String> getMission(int id) throws SQLException {
         String sql = "select * from moon_mission where mission_id = ?";
         List<String> missionDetails = new ArrayList<>();
 
@@ -37,16 +36,17 @@ public class MoonMission {
 
             md.setInt(1, id);
 
-            ResultSet rs = md.executeQuery();
-            ResultSetMetaData rsmd = rs.getMetaData();
+            try (ResultSet rs = md.executeQuery()) {
+                ResultSetMetaData rsmd = rs.getMetaData();
 
-            while (rs.next()) {
-                for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-                    missionDetails.add(rs.getString(i));
+                while (rs.next()) {
+                    for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+                        missionDetails.add(rs.getString(i));
+                    }
                 }
             }
-            return missionDetails;
         }
+        return missionDetails;
     }
 
     public int missionCount(int year) throws SQLException {
@@ -58,10 +58,11 @@ public class MoonMission {
 
             ps.setInt(1, year);
 
-            ResultSet rs = ps.executeQuery();
+            try (ResultSet rs = ps.executeQuery()) {
 
-            while (rs.next()) {
-                return rs.getInt(1);
+                while (rs.next()) {
+                    return rs.getInt(1);
+                }
             }
         }
         return 0;

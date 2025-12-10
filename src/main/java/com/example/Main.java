@@ -14,11 +14,11 @@ import java.util.Scanner;
 import static java.lang.System.*;
 
 public class Main {
-    Scanner sc;
-    Datasource ds;
-    Account accountRepo;
-    MoonMission moonMissionRepo;
-    boolean run;
+    private Scanner sc;
+    private Datasource ds;
+    private Account accountRepo;
+    private MoonMission moonMissionRepo;
+    private boolean run;
 
 
     static void main(String[] args) {
@@ -57,8 +57,8 @@ public class Main {
                     options();
                 }
             }
-        } catch (Exception e) {
-            out.println("Silence test for no line found with scanner nextLine." + e.getMessage());
+        } catch (java.util.NoSuchElementException e) {
+            out.println("Input stream ended unexpectedly: " + e.getMessage());
         }
 
     }
@@ -190,6 +190,8 @@ public class Main {
                                 """, missionDetails.get(0), missionDetails.get(1), missionDetails.get(2),
                         missionDetails.get(3), missionDetails.get(4), missionDetails.get(5), missionDetails.get(6)
                 );
+            }else{
+                out.println("Unexpected data format for mission.");
             }
 
         } catch (SQLException e) {
@@ -281,7 +283,7 @@ public class Main {
             }
             out.println("SSN of account.");
             ssn = sc.nextLine();
-            if (ssn.length() < 10 & !ssn.matches("^\\d{6}-?\\d{4}$")) {
+            if (ssn.length() < 10 && !ssn.matches("^\\d{6}-?\\d{4}$")) {
                 out.println("SSN cannot be empty or shorter than 10 characters.");
                 continue;
             }

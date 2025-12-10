@@ -1,16 +1,13 @@
 package com.example.repos;
 
-import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.util.logging.Logger;
 
 public class SimpleDriverManagerDataSource implements Datasource {
-    String url;
-    String user;
-    String password;
+    private final String url;
+    private final String user;
+    private final String password;
 
 
     public SimpleDriverManagerDataSource(String url, String user, String password) {
