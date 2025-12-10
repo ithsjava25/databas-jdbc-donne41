@@ -1,12 +1,10 @@
 package com.example.repos;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.io.InputStreamReader;
 import java.sql.*;
-import java.util.List;
+import java.util.Objects;
 
 import static java.lang.System.out;
 
@@ -33,11 +31,9 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
             int rows = ps.executeUpdate();
             if(rows > 0){
                 return true;
-            }else{
-                return false;
             }
-
         }
+        return false;
     }
 
     public boolean updateAccount(int id, String password) throws SQLException {
@@ -52,10 +48,9 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
             int rows = updatePass.executeUpdate();
             if(rows > 0){
                 return true;
-            }else{
-                return false;
             }
         }
+        return false;
     }
 
     public boolean deleteAccount(int id) throws SQLException {
@@ -69,10 +64,9 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
             int rows = deleteAcc.executeUpdate();
             if(rows > 0){
                 return true;
-            }else{
-                return false;
             }
         }
+        return false;
     }
 
     public String login(String username) throws SQLException{
@@ -82,12 +76,12 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
         PreparedStatement ps = con.prepareStatement(sql)){
 
             ps.setString(1, username);
-            ResultSet rs = ps.executeQuery();
+            try (ResultSet rs = ps.executeQuery()) {
 
-            if(rs.next()){
-                return rs.getString(1);
+                if (rs.next()) {
+                    return rs.getString(1);
+                }
             }
-
         }
          return "";
         }
@@ -106,49 +100,51 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
         PreparedStatement showdb = con.prepareStatement(showDb);
         PreparedStatement showtable = con.prepareStatement(showTables)){
 
-            ResultSet dbresult = showdb.executeQuery();
-            while(dbresult.next()){
-                if(dbresult.getString("Database").equals("testdb")){
-                    hasDb = true;
+            try(ResultSet dbresult = showdb.executeQuery()) {
+                while (dbresult.next()) {
+                    if (dbresult.getString("Database").equals("testdb")) {
+                        hasDb = true;
+                    }
                 }
             }
             if(hasDb){
-                ResultSet tableResult = showtable.executeQuery();
-                while(tableResult.next()){
-                    if(tableResult.getString(1).matches("account")){
-                        hasAccount = true;
-                    }
-                    if(tableResult.getString(1).matches("moon_mission")){
-                        hasMission = true;
+                try(ResultSet tableResult = showtable.executeQuery()) {
+                    while (tableResult.next()) {
+                        if (tableResult.getString(1).equals("account")) {
+                            hasAccount = true;
+                        }
+                        if (tableResult.getString(1).equals("moon_mission")) {
+                            hasMission = true;
+                        }
                     }
                 }
             }
-            if(hasMission && hasAccount){
-                return false;
-            }
         }
-
+        if(hasMission && hasAccount){
+            return false;
+        }
         try (Connection con = dataSource.getConnection();
              Statement statement = con.createStatement()){
 
-            String init = Paths.get("src/main/resources/init.sql").toString();
-            BufferedReader br = new BufferedReader(new FileReader(init));
+            try(BufferedReader br = new BufferedReader(new InputStreamReader(Objects.requireNonNull(getClass()
+                    .getClassLoader()
+                    .getResourceAsStream("init.sql"))))) {
 
-            StringBuilder query = new StringBuilder();
-            String line;
-            out.println("File found at :" + init);
-            while ((line = br.readLine()) != null) {
+                StringBuilder query = new StringBuilder();
+                String line;
+                out.println("Loading file from classPath");
+                while ((line = br.readLine()) != null) {
 
-                if (line.trim().startsWith("--")) {
-                    continue;
+                    if (line.trim().startsWith("--")) {
+                        continue;
+                    }
+                    query.append(line).append(" ");
+
+                    if (line.endsWith(";")) {
+                        statement.execute(query.toString().trim());
+                        query = new StringBuilder();
+                    }
                 }
-                query.append(line).append(" ");
-
-                if (line.endsWith(";")) {
-                    statement.execute(query.toString().trim());
-                    query = new StringBuilder();
-                }
-
             }
         }
         return true;

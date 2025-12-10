@@ -15,7 +15,6 @@ import static java.lang.System.*;
 
 public class Main {
     private Scanner sc;
-    private Datasource ds;
     private Account accountRepo;
     private MoonMission moonMissionRepo;
     private boolean run;
@@ -42,7 +41,7 @@ public class Main {
                     "Missing DB configuration. Provide APP_JDBC_URL, APP_DB_USER, APP_DB_PASS " +
                             "as system properties (-Dkey=value) or environment variables.");
         }
-        ds = new SimpleDriverManagerDataSource(jdbcUrl, dbUser, dbPass);
+        Datasource ds = new SimpleDriverManagerDataSource(jdbcUrl, dbUser, dbPass);
         accountRepo = new Account(ds);
         moonMissionRepo = new MoonMission(ds);
         sc = new Scanner(in);
@@ -115,7 +114,7 @@ public class Main {
         String inputChoice = "";
         while (!inputChoice.equals("0")) {
             out.println("----------------");
-            out.printf("""
+            out.print("""
                     1) List moon missions (prints spacecraft names from `moon_mission`).
                     2) Get a moon mission by mission_id (prints details for that mission).
                     3) Count missions for a given year (prompts: year; prints the number of missions launched that year).
@@ -203,7 +202,6 @@ public class Main {
     private void missionCountYear() {
         String stringYear = "";
         int missionYear = 0;
-        int missionCount = 0;
         boolean invalidYear;
         do {
             out.println("Input mission year:");
@@ -218,7 +216,7 @@ public class Main {
 
         } while (invalidYear);
         try {
-            missionCount = moonMissionRepo.missionCount(missionYear);
+            int missionCount = moonMissionRepo.missionCount(missionYear);
 
             out.println("Missions count year " + missionYear + ": " + missionCount);
         } catch (SQLException e) {
@@ -290,10 +288,8 @@ public class Main {
             out.println("Password of account.");
             password = sc.nextLine();
 
-            StringBuilder sb = new StringBuilder();
-            sb.append(firstName.substring(0, 3));
-            sb.append(lastName.substring(0, 3));
-            name = sb.toString();
+            name = firstName.substring(0, 3) +
+                    lastName.substring(0, 3);
 
             inValidInput = false;
 
@@ -312,7 +308,7 @@ public class Main {
 
     private void deleteAccount() {
         Integer userId = null;
-        out.println("User_id to delete. Waring there is no undo after deleting, type any letter to exit.");
+        out.println("User_id to delete. Warning: There is no undo after this step, type any letter to exit.");
         String stringId = sc.nextLine();
         out.println("StringID: " + stringId);
         if (stringId.matches("\\d+")) {

@@ -20,6 +20,7 @@ public class DevDatabaseInitializer {
                 System.out.println(mysql.getDatabaseName());
             }catch (Exception e){
                 e.printStackTrace();
+                return;
             }
             System.out.println("mysql object: " + mysql);
             try {
@@ -27,6 +28,7 @@ public class DevDatabaseInitializer {
             } catch (Exception e) {
                 System.out.println("Error starting mySql: " + e.getMessage());
                 e.printStackTrace();
+                return;
             }
             System.out.println("setting properties!");
             System.setProperty("APP_JDBC_URL", mysql.getJdbcUrl());
