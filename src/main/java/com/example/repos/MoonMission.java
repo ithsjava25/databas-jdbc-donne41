@@ -12,7 +12,12 @@ public class MoonMission {
     public MoonMission(Datasource dataSource) {
         this.dataSource = dataSource;
     }
-
+    /**
+     * Retrieve the spacecraft names from the `moon_mission` table.
+     *
+     * @return a list of spacecraft names; empty if no rows are found
+     * @throws SQLException if a database access error occurs
+     */
     public List<String> getSpaceCraft() throws SQLException {
         String sql = "select spacecraft from moon_mission";
         List<String> spaceCrafts = new ArrayList<>();
@@ -26,7 +31,12 @@ public class MoonMission {
         }
         return spaceCrafts;
     }
-
+    /**
+     * Retrieve all column values for the mission with the given mission_id in column order.
+     *
+     * @param id the mission_id to query
+     * @return a list of column values (as strings) for each matching row in column order; empty if no match
+     */
     public List<String> getMission(int id) throws SQLException {
         String sql = "select * from moon_mission where mission_id = ?";
         List<String> missionDetails = new ArrayList<>();
@@ -48,7 +58,12 @@ public class MoonMission {
         }
         return missionDetails;
     }
-
+    /**
+     * Count missions launched in the specified year.
+     *
+     * @param year the launch year to count missions for
+     * @return the number of missions launched in the specified year, or 0 if none
+     */
     public int missionCount(int year) throws SQLException {
         String sql = "select count(*) as missionCount, year(launch_date) as launchyear" +
                 " from moon_mission where year(launch_date) = ? group by launchyear;";

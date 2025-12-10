@@ -15,7 +15,17 @@ public class Account {
         this.dataSource = dataSource;
     }
 
-
+    /**
+     * Inserts a new account record into the database.
+     *
+     * @param firstname the account holder's first name
+     * @param lastname the account holder's last name
+     * @param ssn the account holder's social security number
+     * @param password the account password (stored as provided)
+     * @param name the account username
+     * @return true if the account was created (at least one row affected), false otherwise
+     * @throws SQLException if a database access error occurs
+     */
 public boolean createAccount(String firstname, String lastname, String ssn, String password, String name) throws SQLException{
         String sql = "INSERT INTO account (name, password, first_name, last_name, ssn) VALUES (?,?,?,?,?)";
 
@@ -35,7 +45,14 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
         }
         return false;
     }
-
+    /**
+     * Update the password for the account with the given user ID.
+     *
+     * @param id       the user_id of the account to update
+     * @param password the new password to set for the account
+     * @return         true if at least one row was updated, false otherwise
+     * @throws SQLException if a database access error occurs
+     */
     public boolean updateAccount(int id, String password) throws SQLException {
         String sql = "UPDATE account SET password = ? WHERE user_id = ?;";
 
@@ -53,6 +70,13 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
         return false;
     }
 
+    /**
+     * Prompts for a user ID and attempts to delete the corresponding account.
+     *
+     * If the entered input is not a numeric user ID the method returns without taking action.
+     * On successful deletion prints "Account deleted!", on failure prints "Failed to delete account!".
+     * If a SQL error occurs during deletion the error message is printed.
+     */
     public boolean deleteAccount(int id) throws SQLException {
         String sql = "DELETE FROM account WHERE user_id = ?;";
 
@@ -68,7 +92,13 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
         }
         return false;
     }
-
+    /**
+     * Retrieves the stored password for the account with the given username.
+     *
+     * @param username the account name to look up
+     * @return the password for the account, or an empty string if no matching account exists
+     * @throws SQLException if a database access error occurs
+     */
     public String login(String username) throws SQLException{
         String sql = "select password from account where name = ?;";
 
@@ -88,6 +118,14 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
 
 
 
+    /**
+     * Checks whether the "testdb" database contains the required tables and, if not, executes the SQL statements
+     * in src/main/resources/init.sql to initialize the schema.
+     *
+     * @return `true` if initialization was performed (or attempted), `false` if the required tables already exist
+     * @throws SQLException if a database access error occurs while checking tables or executing statements
+     * @throws IOException  if the initialization SQL file cannot be read
+     */
     public boolean checkDatabaseTables() throws SQLException, IOException {
         String showDb = "show databases";
         String showTables = "show tables from testdb";
