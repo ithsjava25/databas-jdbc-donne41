@@ -13,12 +13,28 @@ import static java.lang.System.out;
 public class Account {
     private final Datasource dataSource;
 
+    /**
+     * Creates a new Account repository backed by the provided Datasource.
+     *
+     * @param dataSource the Datasource used to obtain database connections for account operations
+     */
     public Account(Datasource dataSource) {
         this.dataSource = dataSource;
     }
 
 
-public boolean createAccount(String firstname, String lastname, String ssn, String password, String name) throws SQLException{
+/**
+     * Inserts a new account record into the database.
+     *
+     * @param firstname the account holder's first name
+     * @param lastname the account holder's last name
+     * @param ssn the account holder's social security number
+     * @param password the account password (stored as provided)
+     * @param name the account username
+     * @return true if the account was created (at least one row affected), false otherwise
+     * @throws SQLException if a database access error occurs
+     */
+    public boolean createAccount(String firstname, String lastname, String ssn, String password, String name) throws SQLException{
         String sql = "INSERT INTO account (name, password, first_name, last_name, ssn) VALUES (?,?,?,?,?)";
 
         try (Connection con = dataSource.getConnection();
@@ -40,6 +56,14 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
         }
     }
 
+    /**
+     * Update the password for the account with the given user ID.
+     *
+     * @param id       the user_id of the account to update
+     * @param password the new password to set for the account
+     * @return         true if at least one row was updated, false otherwise
+     * @throws SQLException if a database access error occurs
+     */
     public boolean updateAccount(int id, String password) throws SQLException {
         String sql = "UPDATE account SET password = ? WHERE user_id = ?;";
 
@@ -58,6 +82,13 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
         }
     }
 
+    /**
+     * Deletes the account with the given user id.
+     *
+     * @param id the user_id of the account to delete
+     * @return `true` if a row was deleted, `false` otherwise
+     * @throws SQLException if a database access error occurs
+     */
     public boolean deleteAccount(int id) throws SQLException {
         String sql = "DELETE FROM account WHERE user_id = ?;";
 
@@ -75,7 +106,14 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
         }
     }
 
-    public String login(String username) throws SQLException{
+    /**
+         * Retrieves the stored password for the account with the given username.
+         *
+         * @param username the account name to look up
+         * @return the password for the account, or an empty string if no matching account exists
+         * @throws SQLException if a database access error occurs
+         */
+        public String login(String username) throws SQLException{
         String sql = "select password from account where name = ?;";
 
         try(Connection con = dataSource.getConnection();
@@ -94,6 +132,14 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
 
 
 
+    /**
+     * Checks whether the "testdb" database contains the required tables and, if not, executes the SQL statements
+     * in src/main/resources/init.sql to initialize the schema.
+     *
+     * @return `true` if initialization was performed (or attempted), `false` if the required tables already exist
+     * @throws SQLException if a database access error occurs while checking tables or executing statements
+     * @throws IOException  if the initialization SQL file cannot be read
+     */
     public boolean checkDatabaseTables() throws SQLException, IOException {
         String showDb = "show databases";
         String showTables = "show tables from testdb";
@@ -154,4 +200,3 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
         return true;
     }
 }
-

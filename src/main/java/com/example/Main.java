@@ -21,6 +21,13 @@ public class Main {
     boolean run;
 
 
+    /**
+     * Application entry point that optionally starts development initialization and then launches the interactive application.
+     *
+     * <p>If the command-line arguments include the flag {@code --dev} the development database initializer is invoked before the application runs.</p>
+     *
+     * @param args command-line arguments; recognizes {@code --dev} to enable development mode (in addition to equivalent system properties or environment variables)
+     */
     static void main(String[] args) {
 
 
@@ -31,6 +38,16 @@ public class Main {
         new Main().run();
     }
 
+    /**
+     * Initialize database access, repositories, and input scanner, perform database initialization,
+     * then enter the interactive login and options loop until the application is exited.
+     *
+     * <p>Resolves JDBC configuration (system properties then environment variables),
+     * constructs the datasource and repository objects, runs DB initialization, and repeatedly
+     * prompts for login and presents the options menu while the main loop flag is true.</p>
+     *
+     * @throws IllegalStateException if any of APP_JDBC_URL, APP_DB_USER, or APP_DB_PASS is not provided
+     */
     public void run() {
         // Resolve DB settings with precedence: System properties -> Environment variables
         String jdbcUrl = resolveConfig("APP_JDBC_URL", "APP_JDBC_URL");
@@ -63,6 +80,13 @@ public class Main {
 
     }
 
+    /**
+     * Ensures required database tables exist and initializes them from the built-in init data when missing.
+     *
+     * Attempts to verify and create the application's database tables; when tables were absent or removed,
+     * prints a message indicating creation and loading from the init file. On SQL or I/O failures this
+     * method prints an error message describing the problem.
+     */
     private void dbInitilization() {
 
         try {
@@ -78,6 +102,16 @@ public class Main {
     }
 
 
+    /**
+     * Prompts the user for username and password, authenticates against the account repository,
+     * and updates program state based on user input.
+     *
+     * <p>The method repeatedly prompts for credentials until a successful login or the user
+     * chooses to exit by entering "0" for username or password. On exit it sets {@code run}
+     * to {@code false}. On successful authentication it prints a success message and returns
+     * to the caller; on failure it prints an invalid-credentials message. SQL errors during
+     * authentication are caught and reported via printed messages.
+     */
     private void logInPromt() {
         boolean invalidInput = true;
         String userName = "";
@@ -111,6 +145,12 @@ public class Main {
         }
     }
 
+        /**
+         * Presents an interactive menu, reads user selections, and performs the chosen account or mission actions.
+         *
+         * Repeatedly displays menu options, prompts for a selection, and dispatches to the corresponding operation:
+         * list missions, get mission by ID, count missions by year, create/update/delete accounts, or exit.
+         */
         private void options () {
             String inputChoice = "";
             while (!inputChoice.equals("0")) {
@@ -139,6 +179,12 @@ public class Main {
             }
         }
 
+        /**
+         * Prints the names of all spacecraft retrieved from the moon mission repository to standard output.
+         *
+         * If no missions are found, prints a "No moon missions found!" message. On database errors, prints an error
+         * message containing the exception message.
+         */
         private void getMoonMission () {
             try {
                 var spacecraft = moonMissionRepo.getSpaceCraft();
@@ -155,6 +201,13 @@ public class Main {
             }
         }
 
+        /**
+         * Prompt for a mission ID, retrieve that mission's details, and print them if found.
+         *
+         * Prompts the user until a numeric mission ID is entered. Fetches the mission by ID
+         * from the moonMission repository and prints a formatted block of mission fields
+         * when seven fields are returned; prints a not-found message when no details are available.
+         */
         private void getMoonMissionId () {
             String missionId = "";
             boolean idInvalid;
@@ -198,6 +251,12 @@ public class Main {
 
         }
 
+        /**
+         * Prompts the user for a four-digit year, retrieves the number of moon missions in that year, and prints the result.
+         *
+         * Repeats input until a valid year in YYYY format is entered, queries the repository for the mission count, and prints
+         * either the count or an error message if a database error occurs.
+         */
         private void missionCountYear () {
             String stringYear = "";
             int missionYear = 0;
@@ -224,6 +283,12 @@ public class Main {
             }
         }
 
+        /**
+         * Prompts the user for a numeric user ID and a non-empty new password, validates the inputs,
+         * and attempts to update the account password in the repository, reporting success or failure.
+         *
+         * <p>Input is read from the configured scanner; feedback and error messages are printed to the configured output.
+         */
         private void updateAccount () {
             int userId = 0;
             String password = "";
@@ -258,6 +323,21 @@ public class Main {
             }
         }
 
+        /**
+         * Prompts the user for account details, validates the input, and attempts to create a new account
+         * in the account repository.
+         *
+         * <p>Validation performed:
+         * <ul>
+         *   <li>First and last name must be at least 3 characters.</li>
+         *   <li>SSN must be at least 10 characters and match the pattern `\d{6}-?\d{4}`.</li>
+         * </ul>
+         *
+         * <p>The account username is constructed by concatenating the first three characters of the
+         * first name and the first three characters of the last name. On success or failure the method
+         * prints a corresponding message to standard output; SQL errors are caught and their messages
+         * are printed.
+         */
         private void createAccount () {
             boolean inValidInput = true;
             String firstName = "";
@@ -308,6 +388,13 @@ public class Main {
             }
         }
 
+        /**
+         * Prompts for a user ID and attempts to delete the corresponding account.
+         *
+         * If the entered input is not a numeric user ID the method returns without taking action.
+         * On successful deletion prints "Account deleted!", on failure prints "Failed to delete account!".
+         * If a SQL error occurs during deletion the error message is printed.
+         */
         private void deleteAccount () {
             Integer userId = null;
             out.println("User_id to delete. Waring there is no undo after deleting, type any letter to exit.");
