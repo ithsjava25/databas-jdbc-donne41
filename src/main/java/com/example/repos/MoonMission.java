@@ -11,6 +11,7 @@ public class MoonMission {
     public MoonMission(Datasource dataSource) {
         this.dataSource = dataSource;
     }
+
     /**
      * Retrieve the spacecraft names from the `moon_mission` table.
      *
@@ -30,6 +31,7 @@ public class MoonMission {
         }
         return spaceCrafts;
     }
+
     /**
      * Retrieve all column values for the mission with the given mission_id in column order.
      *
@@ -57,6 +59,7 @@ public class MoonMission {
         }
         return missionDetails;
     }
+
     /**
      * Count missions launched in the specified year.
      *

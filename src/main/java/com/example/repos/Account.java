@@ -19,18 +19,18 @@ public class Account {
      * Inserts a new account record into the database.
      *
      * @param firstname the account holder's first name
-     * @param lastname the account holder's last name
-     * @param ssn the account holder's social security number
-     * @param password the account password (stored as provided)
-     * @param name the account username
+     * @param lastname  the account holder's last name
+     * @param ssn       the account holder's social security number
+     * @param password  the account password (stored as provided)
+     * @param name      the account username
      * @return true if the account was created (at least one row affected), false otherwise
      * @throws SQLException if a database access error occurs
      */
-public boolean createAccount(String firstname, String lastname, String ssn, String password, String name) throws SQLException{
+    public boolean createAccount(String firstname, String lastname, String ssn, String password, String name) throws SQLException {
         String sql = "INSERT INTO account (name, password, first_name, last_name, ssn) VALUES (?,?,?,?,?)";
 
         try (Connection con = dataSource.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql)){
+             PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, name);
             ps.setString(2, password);
@@ -39,31 +39,32 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
             ps.setString(5, ssn);
 
             int rows = ps.executeUpdate();
-            if(rows > 0){
+            if (rows > 0) {
                 return true;
             }
         }
         return false;
     }
+
     /**
      * Update the password for the account with the given user ID.
      *
      * @param id       the user_id of the account to update
      * @param password the new password to set for the account
-     * @return         true if at least one row was updated, false otherwise
+     * @return true if at least one row was updated, false otherwise
      * @throws SQLException if a database access error occurs
      */
     public boolean updateAccount(int id, String password) throws SQLException {
         String sql = "UPDATE account SET password = ? WHERE user_id = ?;";
 
-        try(Connection con = dataSource.getConnection();
-            PreparedStatement updatePass = con.prepareStatement(sql)) {
+        try (Connection con = dataSource.getConnection();
+             PreparedStatement updatePass = con.prepareStatement(sql)) {
 
             updatePass.setInt(2, id);
             updatePass.setString(1, password);
 
             int rows = updatePass.executeUpdate();
-            if(rows > 0){
+            if (rows > 0) {
                 return true;
             }
         }
@@ -72,7 +73,7 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
 
     /**
      * Prompts for a user ID and attempts to delete the corresponding account.
-     *
+     * <p>
      * If the entered input is not a numeric user ID the method returns without taking action.
      * On successful deletion prints "Account deleted!", on failure prints "Failed to delete account!".
      * If a SQL error occurs during deletion the error message is printed.
@@ -80,18 +81,19 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
     public boolean deleteAccount(int id) throws SQLException {
         String sql = "DELETE FROM account WHERE user_id = ?;";
 
-        try(Connection con = dataSource.getConnection();
-        PreparedStatement deleteAcc = con.prepareStatement(sql)){
+        try (Connection con = dataSource.getConnection();
+             PreparedStatement deleteAcc = con.prepareStatement(sql)) {
 
             deleteAcc.setInt(1, id);
 
             int rows = deleteAcc.executeUpdate();
-            if(rows > 0){
+            if (rows > 0) {
                 return true;
             }
         }
         return false;
     }
+
     /**
      * Retrieves the stored password for the account with the given username.
      *
@@ -99,11 +101,11 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
      * @return the password for the account, or an empty string if no matching account exists
      * @throws SQLException if a database access error occurs
      */
-    public String login(String username) throws SQLException{
+    public String login(String username) throws SQLException {
         String sql = "select password from account where name = ?;";
 
-        try(Connection con = dataSource.getConnection();
-        PreparedStatement ps = con.prepareStatement(sql)){
+        try (Connection con = dataSource.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
@@ -113,9 +115,8 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
                 }
             }
         }
-         return "";
-        }
-
+        return "";
+    }
 
 
     /**
@@ -129,24 +130,23 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
     public boolean checkDatabaseTables() throws SQLException, IOException {
         String showDb = "show databases";
         String showTables = "show tables from testdb";
-        int tables = 0;
         boolean hasDb = false;
         boolean hasAccount = false;
         boolean hasMission = false;
 
         try (Connection con = dataSource.getConnection();
-        PreparedStatement showdb = con.prepareStatement(showDb);
-        PreparedStatement showtable = con.prepareStatement(showTables)){
+             PreparedStatement showdb = con.prepareStatement(showDb);
+             PreparedStatement showtable = con.prepareStatement(showTables)) {
 
-            try(ResultSet dbresult = showdb.executeQuery()) {
+            try (ResultSet dbresult = showdb.executeQuery()) {
                 while (dbresult.next()) {
                     if (dbresult.getString("Database").equals("testdb")) {
                         hasDb = true;
                     }
                 }
             }
-            if(hasDb){
-                try(ResultSet tableResult = showtable.executeQuery()) {
+            if (hasDb) {
+                try (ResultSet tableResult = showtable.executeQuery()) {
                     while (tableResult.next()) {
                         if (tableResult.getString(1).equals("account")) {
                             hasAccount = true;
@@ -158,13 +158,13 @@ public boolean createAccount(String firstname, String lastname, String ssn, Stri
                 }
             }
         }
-        if(hasMission && hasAccount){
+        if (hasMission && hasAccount) {
             return false;
         }
         try (Connection con = dataSource.getConnection();
-             Statement statement = con.createStatement()){
+             Statement statement = con.createStatement()) {
 
-            try(BufferedReader br = new BufferedReader(new InputStreamReader(Objects.requireNonNull(getClass()
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(Objects.requireNonNull(getClass()
                     .getClassLoader()
                     .getResourceAsStream("init.sql"))))) {
 

@@ -36,6 +36,7 @@ public class Main {
         }
         new Main().run();
     }
+
     /**
      * Initialize database access, repositories, and input scanner, perform database initialization,
      * then enter the interactive login and options loop until the application is exited.
@@ -64,8 +65,6 @@ public class Main {
         run = true;
 
 
-
-
         dbInitilization();
         try {
             while (run) {
@@ -82,7 +81,7 @@ public class Main {
 
     /**
      * Ensures required database tables exist and initializes them from the built-in init data when missing.
-     *
+     * <p>
      * Attempts to verify and create the application's database tables; when tables were absent or removed,
      * prints a message indicating creation and loading from the init file. On SQL or I/O failures this
      * method prints an error message describing the problem.
@@ -115,7 +114,7 @@ public class Main {
         boolean invalidInput = true;
         String userName = "";
         String password = "";
-        while (invalidInput) {
+        do {
             out.println("Username or 0 for exit.");
             userName = sc.nextLine();
             if (userName.equals("0")) {
@@ -141,12 +140,12 @@ public class Main {
             } catch (SQLException e) {
                 out.println("Error getting loging" + e.getMessage());
             }
-        }
+        } while (invalidInput);
     }
 
     /**
      * Presents an interactive menu, reads user selections, and performs the chosen account or mission actions.
-     *
+     * <p>
      * Repeatedly displays menu options, prompts for a selection, and dispatches to the corresponding operation:
      * list missions, get mission by ID, count missions by year, create/update/delete accounts, or exit.
      */
@@ -180,7 +179,7 @@ public class Main {
 
     /**
      * Prints the names of all spacecraft retrieved from the moon mission repository to standard output.
-     *
+     * <p>
      * If no missions are found, prints a "No moon missions found!" message. On database errors, prints an error
      * message containing the exception message.
      */
@@ -189,7 +188,7 @@ public class Main {
             var spacecraft = moonMissionRepo.getSpaceCraft();
 
             if (spacecraft.isEmpty()) {
-                out.println("No moon missions found!");
+                out.println("No Spacecrafts found!");
                 return;
             }
             for (String sp : spacecraft) {
@@ -202,7 +201,7 @@ public class Main {
 
     /**
      * Prompt for a mission ID, retrieve that mission's details, and print them if found.
-     *
+     * <p>
      * Prompts the user until a numeric mission ID is entered. Fetches the mission by ID
      * from the moonMission repository and prints a formatted block of mission fields
      * when seven fields are returned; prints a not-found message when no details are available.
@@ -242,7 +241,7 @@ public class Main {
                                 """, missionDetails.get(0), missionDetails.get(1), missionDetails.get(2),
                         missionDetails.get(3), missionDetails.get(4), missionDetails.get(5), missionDetails.get(6)
                 );
-            }else{
+            } else {
                 out.println("Unexpected data format for mission.");
             }
         } catch (SQLException e) {
@@ -252,7 +251,7 @@ public class Main {
 
     /**
      * Prompts the user for a four-digit year, retrieves the number of moon missions in that year, and prints the result.
-     *
+     * <p>
      * Repeats input until a valid year in YYYY format is entered, queries the repository for the mission count, and prints
      * either the count or an error message if a database error occurs.
      */
@@ -280,6 +279,7 @@ public class Main {
             out.println("Error getting mission count year" + e.getMessage());
         }
     }
+
     /**
      * Prompts the user for a numeric user ID and a non-empty new password, validates the inputs,
      * and attempts to update the account password in the repository, reporting success or failure.
@@ -385,7 +385,7 @@ public class Main {
 
     /**
      * Prompts for a user ID and attempts to delete the corresponding account.
-     *
+     * <p>
      * If the entered input is not a numeric user ID the method returns without taking action.
      * On successful deletion prints "Account deleted!", on failure prints "Failed to delete account!".
      * If a SQL error occurs during deletion the error message is printed.
