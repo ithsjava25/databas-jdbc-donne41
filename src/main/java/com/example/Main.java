@@ -20,6 +20,13 @@ public class Main {
     private boolean run;
 
 
+    /**
+     * Application entry point that optionally starts development initialization and then launches the interactive application.
+     *
+     * <p>If the command-line arguments include the flag {@code --dev} the development database initializer is invoked before the application runs.</p>
+     *
+     * @param args command-line arguments; recognizes {@code --dev} to enable development mode (in addition to equivalent system properties or environment variables)
+     */
     static void main(String[] args) {
 
 
@@ -29,7 +36,16 @@ public class Main {
         }
         new Main().run();
     }
-
+    /**
+     * Initialize database access, repositories, and input scanner, perform database initialization,
+     * then enter the interactive login and options loop until the application is exited.
+     *
+     * <p>Resolves JDBC configuration (system properties then environment variables),
+     * constructs the datasource and repository objects, runs DB initialization, and repeatedly
+     * prompts for login and presents the options menu while the main loop flag is true.</p>
+     *
+     * @throws IllegalStateException if any of APP_JDBC_URL, APP_DB_USER, or APP_DB_PASS is not provided
+     */
     public void run() {
         // Resolve DB settings with precedence: System properties -> Environment variables
         String jdbcUrl = resolveConfig("APP_JDBC_URL", "APP_JDBC_URL");
@@ -286,7 +302,7 @@ public class Main {
             }
             out.println("New password:");
             password = sc.nextLine();
-            if (password.isEmpty()) {
+            if (password.isBlank()) {
                 out.println("Password cannot be empty or just whitespace.");
                 invalid = true;
             } else {
@@ -342,8 +358,8 @@ public class Main {
             }
             out.println("SSN of account.");
             ssn = sc.nextLine();
-            if (ssn.length() < 10 && !ssn.matches("^\\d{6}-?\\d{4}$")) {
-                out.println("SSN cannot be empty or shorter than 10 characters.");
+            if (!ssn.matches("^\\d{6}-?\\d{4}$")) {
+                out.println("SSN cannot be empty, shorter than 10 characters and only contain numbers with or without '-' after 6 digits.");
                 continue;
             }
             out.println("Password of account.");

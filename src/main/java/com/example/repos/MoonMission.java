@@ -1,6 +1,5 @@
 package com.example.repos;
 
-import org.testcontainers.shaded.org.checkerframework.common.returnsreceiver.qual.This;
 
 import java.sql.*;
 import java.util.ArrayList;

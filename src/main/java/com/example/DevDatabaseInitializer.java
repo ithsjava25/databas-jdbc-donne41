@@ -7,6 +7,14 @@ import java.sql.*;
 public class DevDatabaseInitializer {
     private static MySQLContainer<?> mysql;
 
+    /**
+     * Starts a shared MySQL Testcontainers instance (if not already started) and publishes its JDBC URL,
+     * username, and password as system properties.
+     *
+     * <p>If the container does not exist this method creates and starts it; on success it sets the
+     * system properties "APP_JDBC_URL", "APP_DB_USER", and "APP_DB_PASS" with the container's connection
+     * details. Exceptions during creation or startup are caught and printed to standard output/err.
+     */
     public static void start() {
         if (mysql == null) {
             System.out.println("Starting MySQL Container!");
