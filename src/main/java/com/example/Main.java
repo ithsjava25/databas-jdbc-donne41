@@ -116,7 +116,7 @@ public class Main {
         String password = "";
         do {
             out.println("Username or 0 for exit.");
-            userName = sc.nextLine();
+            userName = sc.nextLine().trim();
             if (userName.equals("0")) {
                 out.println("Exiting..");
                 run = false;
@@ -124,7 +124,7 @@ public class Main {
             }
             //consider using hashed passwords.
             out.println("Password or 0 for exit");
-            password = sc.nextLine();
+            password = sc.nextLine().trim();
             if (password.equals("0")) {
                 out.println("Exiting..");
                 run = false;
@@ -162,7 +162,7 @@ public class Main {
                     6) Delete an account (prompts: user_id; prints confirmation).
                     0) Exit.
                     """);
-            inputChoice = sc.nextLine();
+            inputChoice = sc.nextLine().trim();
             switch (inputChoice) {
                 case "1" -> getMoonMission();
                 case "2" -> getMoonMissionId();
@@ -191,9 +191,8 @@ public class Main {
                 out.println("No Spacecrafts found!");
                 return;
             }
-            for (String sp : spacecraft) {
-                out.println(sp);
-            }
+            out.println("Spacecrafts name: ");
+            spacecraft.forEach(System.out::println);
         } catch (SQLException e) {
             out.println("Error getting moon mission" + e.getMessage());
         }
@@ -211,7 +210,7 @@ public class Main {
         boolean idInvalid;
         do {
             out.println("Input mission_ID:");
-            missionId = sc.nextLine();
+            missionId = sc.nextLine().trim();
             if (!missionId.matches("\\d+")) {
                 out.println("Invalid mission id, only numbers (e.g) 8.");
                 idInvalid = true;
@@ -261,7 +260,7 @@ public class Main {
         boolean invalidYear;
         do {
             out.println("Input mission year:");
-            stringYear = sc.nextLine();
+            stringYear = sc.nextLine().trim();
             if (stringYear.matches("\\d{4}")) {
                 missionYear = Integer.parseInt(stringYear);
                 invalidYear = false;
@@ -292,7 +291,7 @@ public class Main {
         boolean invalid = true;
         do {
             out.println("User_id to update password: ");
-            String stringId = sc.nextLine();
+            String stringId = sc.nextLine().trim();
             if (stringId.matches("\\d+")) {
                 userId = Integer.parseInt(stringId);
                 invalid = false;
@@ -301,7 +300,7 @@ public class Main {
                 continue;
             }
             out.println("New password:");
-            password = sc.nextLine();
+            password = sc.nextLine().trim();
             if (password.isBlank()) {
                 out.println("Password cannot be empty or just whitespace.");
                 invalid = true;
@@ -345,25 +344,28 @@ public class Main {
 
         do {
             out.println("First name of account.");
-            firstName = sc.nextLine();
+            firstName = sc.nextLine().trim();
             if (firstName.length() < 3) {
                 out.println("First name cannot be empty or shorter than 3 characters.");
                 continue;
             }
             out.println("Last name of account.");
-            lastName = sc.nextLine();
+            lastName = sc.nextLine().trim();
             if (lastName.length() < 3) {
                 out.println("Last name cannot be empty or shorter than 3 characters.");
                 continue;
             }
             out.println("SSN of account.");
-            ssn = sc.nextLine();
+            ssn = sc.nextLine().trim();
             if (!ssn.matches("^\\d{6}-?\\d{4}$")) {
                 out.println("SSN cannot be empty, shorter than 10 characters and only contain numbers with or without '-' after 6 digits.");
                 continue;
             }
+            if (!ssn.contains("-")) {
+                ssn = ssn.substring(0, 6) + "-" + ssn.substring(6);
+            }
             out.println("Password of account.");
-            password = sc.nextLine();
+            password = sc.nextLine().trim();
 
             name = firstName.substring(0, 3) +
                     lastName.substring(0, 3);
@@ -393,7 +395,7 @@ public class Main {
     private void deleteAccount() {
         Integer userId = null;
         out.println("User_id to delete. Warning: There is no undo after this step, type any letter to exit.");
-        String stringId = sc.nextLine();
+        String stringId = sc.nextLine().trim();
         out.println("StringID: " + stringId);
         if (stringId.matches("\\d+")) {
             userId = Integer.parseInt(stringId);

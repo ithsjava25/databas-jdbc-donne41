@@ -12,8 +12,8 @@ public class SimpleDriverManagerDataSource implements Datasource {
     /**
      * Create a data source configured with the provided JDBC connection parameters.
      *
-     * @param url the JDBC connection URL for the target database
-     * @param user the username to use when obtaining connections, or {@code null} if not required
+     * @param url      the JDBC connection URL for the target database
+     * @param user     the username to use when obtaining connections, or {@code null} if not required
      * @param password the password for the given user, or {@code null} if not required
      */
     public SimpleDriverManagerDataSource(String url, String user, String password) {
@@ -21,6 +21,7 @@ public class SimpleDriverManagerDataSource implements Datasource {
         this.user = user;
         this.password = password;
     }
+
     /**
      * Obtain a JDBC connection using the configured URL, username, and password.
      *
@@ -28,10 +29,16 @@ public class SimpleDriverManagerDataSource implements Datasource {
      * @throws SQLException if a database access error occurs or the connection cannot be established
      */
     @Override
-    public Connection getConnection() throws SQLException{
-        return DriverManager.getConnection(url,user,password);
+    public Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(url, user, password);
     }
 
+    @Override
+    public Connection getConnection(String url) throws SQLException {
+        return DriverManager.getConnection(url, this.user, this.password);
+    }
 
-
+    public String getUrl() {
+        return url;
+    }
 }

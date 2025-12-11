@@ -2,6 +2,7 @@ package com.example.repos;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+
 /**
  * Obtain a JDBC connection to the configured datasource.
  *
@@ -10,4 +11,8 @@ import java.sql.SQLException;
  */
 public interface Datasource {
     Connection getConnection() throws SQLException;
+
+    Connection getConnection(String url) throws SQLException;
+
+    String getUrl();
 }

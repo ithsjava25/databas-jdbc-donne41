@@ -129,14 +129,16 @@ public class Account {
      */
     public boolean checkDatabaseTables() throws SQLException, IOException {
         String showDb = "show databases";
+        String createDb = "create database testdb";
         String showTables = "show tables from testdb";
         boolean hasDb = false;
         boolean hasAccount = false;
         boolean hasMission = false;
+        String tempUrl = dataSource.getUrl().replace("/testdb", "");
 
-        try (Connection con = dataSource.getConnection();
+        try (Connection con = dataSource.getConnection(tempUrl);
              PreparedStatement showdb = con.prepareStatement(showDb);
-             PreparedStatement showtable = con.prepareStatement(showTables)) {
+             PreparedStatement createdb = con.prepareStatement(createDb)) {
 
             try (ResultSet dbresult = showdb.executeQuery()) {
                 while (dbresult.next()) {
@@ -145,15 +147,23 @@ public class Account {
                     }
                 }
             }
-            if (hasDb) {
-                try (ResultSet tableResult = showtable.executeQuery()) {
-                    while (tableResult.next()) {
-                        if (tableResult.getString(1).equals("account")) {
-                            hasAccount = true;
-                        }
-                        if (tableResult.getString(1).equals("moon_mission")) {
-                            hasMission = true;
-                        }
+            if (!hasDb) {
+                int rows = createdb.executeUpdate();
+                if (rows > 0) {
+                    hasDb = true;
+                }
+            }
+        }
+        if (hasDb) {
+            try (Connection con = dataSource.getConnection();
+                 PreparedStatement showtable = con.prepareStatement(showTables);
+                 ResultSet tableResult = showtable.executeQuery()) {
+                while (tableResult.next()) {
+                    if (tableResult.getString(1).equals("account")) {
+                        hasAccount = true;
+                    }
+                    if (tableResult.getString(1).equals("moon_mission")) {
+                        hasMission = true;
                     }
                 }
             }
